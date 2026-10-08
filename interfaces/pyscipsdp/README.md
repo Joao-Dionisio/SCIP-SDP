@@ -26,34 +26,28 @@ pip install pyscipsdp
 
 ## Building from source
 
-This is for modifying SCIP-SDP. PySCIPSDP lives in SCIP-SDP's repository and compiles the
-SCIP-SDP sources of that checkout into its extension. It links against the SCIP that comes with
-the PySCIPOpt from PyPI, so that a single SCIP is used.
+This is for modifying SCIP-SDP. Build SCIP-SDP with its CMake, with the SDP solver of your choice
+(see SCIP-SDP's `INSTALL`), then build PySCIPSDP against it. PySCIPSDP and SCIP-SDP use the SCIP that
+comes with the PySCIPOpt from PyPI, so that a single SCIP is used.
 
 ```bash
 git clone https://github.com/scipopt/SCIP-SDP
-cd SCIP-SDP/interfaces/pyscipsdp
-export SCIPOPTDIR=/path/to/scip          # SCIP installation for its headers; same major.minor
-                                         # version as the SCIP of PySCIPOpt
-export SDPS=cbl                          # SDP solver: none (default) or cbl (Clarabel)
-export CLARABEL_DIR=/path/to/Clarabel.cpp
+cd SCIP-SDP
+cmake -B build -DSCIP_DIR=/path/to/scip -DSDPS=...    # msk, sdpa, dsdp, cbl or none
+cmake --build build
+
+cd interfaces/pyscipsdp
+export SCIPOPTDIR=/path/to/scip    # SCIP installation for its headers; same major.minor
+                                   # version as the SCIP of PySCIPOpt
 pip install .
 ```
 
-After changing SCIP-SDP, run `pip install .` again. `SCIPSDP_SOURCE` builds against a different
-SCIP-SDP checkout.
-
-With `SDPS=none`, SCIP-SDP can only solve with LP relaxations and eigenvector cuts (set
-`misc/solvesdps` to 0). For `SDPS=cbl`, build Clarabel's C library first (needs Rust):
-
-```bash
-git clone --recurse-submodules https://github.com/oxfordcontrol/Clarabel.cpp
-cd Clarabel.cpp/rust_wrapper
-cargo build --release --features "sdp,clarabel/sdp-accelerate"   # Linux: clarabel/sdp-openblas
-```
+By default PySCIPSDP uses SCIP-SDP's `build/` directory; set `SCIPSDPDIR` to use a SCIP-SDP
+installation (`cmake --install`) instead. After changing SCIP-SDP, rebuild it and run
+`pip install .` again.
 
 PySCIPSDP is compiled against the `.pxd` files of PySCIPOpt. After upgrading PySCIPOpt, rebuild
-PySCIPSDP. Building from source is supported on Linux and macOS.
+PySCIPSDP. Building from source is currently tested on macOS only.
 
 ## API (in addition to `pyscipopt.Model`)
 
