@@ -46,15 +46,22 @@ if len(libscip) != 1:
 libscip = libscip[0]
 
 # look for environment variable that specifies path to SCIP-SDP: an installation (cmake --install),
-# or by default the CMake build directory build/ of this repository
+# or by default this repository, which is then built with CMake into build/ (SDP solver from SDPS)
 scipsdpdir = os.environ.get("SCIPSDPDIR", "").strip('"')
 if scipsdpdir:
     scipsdp_includedirs = [os.path.join(scipsdpdir, "include", "scip"), os.path.join(scipsdpdir, "include")]
     scipsdp_libdir = os.path.join(scipsdpdir, "lib64" if os.path.exists(os.path.join(scipsdpdir, "lib64")) else "lib")
 else:
-    repodir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    repodir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+    builddir = os.path.join(repodir, "build")
+    if not os.path.exists(os.path.join(builddir, "CMakeCache.txt")) or "SDPS" in os.environ:
+        # no build rpath: libscipsdp must find libscip through our runtime search path (PySCIPOpt's first)
+        subprocess.check_call(["cmake", "-S", repodir, "-B", builddir, "-DCMAKE_BUILD_TYPE=Release",
+                               "-DCMAKE_PREFIX_PATH=" + scipoptdir, "-DCMAKE_SKIP_BUILD_RPATH=ON",
+                               "-DSDPS=" + os.environ.get("SDPS", "none")])
+    subprocess.check_call(["cmake", "--build", builddir, "--target", "libscipsdp", "--parallel"])
     scipsdp_includedirs = [os.path.join(repodir, "src", "scipsdp"), os.path.join(repodir, "src")]
-    scipsdp_libdir = os.path.join(repodir, "build", "lib")
+    scipsdp_libdir = os.path.join(builddir, "lib")
 scipsdp_includedirs = [os.path.abspath(d) for d in scipsdp_includedirs]
 scipsdp_libdir = os.path.abspath(scipsdp_libdir)
 if not glob.glob(os.path.join(scipsdp_libdir, "libscipsdp.*")):

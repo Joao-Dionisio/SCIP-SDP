@@ -26,27 +26,23 @@ pip install pyscipsdp
 
 ## Building from source
 
-This is for modifying SCIP-SDP. Build SCIP-SDP with its CMake, with the SDP solver of your choice
-(see SCIP-SDP's `INSTALL`), then build PySCIPSDP against it. PySCIPSDP and SCIP-SDP use the SCIP that
-comes with the PySCIPOpt from PyPI, so that a single SCIP is used.
+This is for modifying SCIP-SDP. It needs a SCIP installation of the same major.minor version as the
+SCIP of PySCIPOpt (for its headers and CMake files), and CMake.
 
 ```bash
 git clone https://github.com/scipopt/SCIP-SDP
-cd SCIP-SDP
-cmake -B build -DSCIP_DIR=/path/to/scip -DSDPS=...    # msk, sdpa, dsdp, cbl or none
-cmake --build build
-
-cd interfaces/pyscipsdp
-export SCIPOPTDIR=/path/to/scip    # SCIP installation for its headers; same major.minor
-                                   # version as the SCIP of PySCIPOpt
+cd SCIP-SDP/interfaces/pyscipsdp
+export SCIPOPTDIR=/path/to/scip
 pip install .
 ```
 
-By default PySCIPSDP uses SCIP-SDP's `build/` directory; set `SCIPSDPDIR` to use a SCIP-SDP
-installation (`cmake --install`) instead. After changing SCIP-SDP, rebuild it and run
-`pip install .` again.
+`pip install .` builds SCIP-SDP with its CMake into `SCIP-SDP/build` and then PySCIPSDP against it.
+The SDP solver is chosen as in SCIP-SDP's build: `SDPS=msk|sdpa|dsdp|cbl|none` (default `none`), with
+the solver found as described in SCIP-SDP's `INSTALL`. After changing SCIP-SDP, run `pip install .`
+again; to use an already installed SCIP-SDP instead, set `SCIPSDPDIR`.
 
-PySCIPSDP is compiled against the `.pxd` files of PySCIPOpt. After upgrading PySCIPOpt, rebuild
+PySCIPSDP and SCIP-SDP use the SCIP that comes with the PySCIPOpt from PyPI, so that a single SCIP is
+used. PySCIPSDP is compiled against the `.pxd` files of PySCIPOpt; after upgrading PySCIPOpt, rebuild
 PySCIPSDP. Building from source is currently tested on macOS only.
 
 ## API (in addition to `pyscipopt.Model`)
