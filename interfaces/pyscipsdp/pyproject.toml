@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "cython >=3.0", "numpy", "pyscipopt"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PySCIPSDP"
+description = "Python interface for SCIP-SDP, built on top of PySCIPOpt"
+version = "0.1.0"
+dependencies = ["pyscipopt", "numpy"]
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
