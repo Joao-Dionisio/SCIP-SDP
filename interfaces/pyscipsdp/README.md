@@ -32,9 +32,11 @@ SCIP of PySCIPOpt (for its headers and CMake files), and CMake.
 ```bash
 git clone https://github.com/scipopt/SCIP-SDP
 cd SCIP-SDP/interfaces/pyscipsdp
-export SCIPOPTDIR=/path/to/scip
 pip install .
 ```
+
+The SCIP installation is looked for in the conda environment, `/usr/local`, `/opt/homebrew` and
+`/usr`; set `SCIPOPTDIR` to use another one.
 
 `pip install .` builds SCIP-SDP with its CMake into `SCIP-SDP/build` and then PySCIPSDP against it.
 The SDP solver is chosen as in SCIP-SDP's build: `SDPS=msk|sdpa|dsdp|cbl|none` (default `none`), with

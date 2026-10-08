@@ -11,25 +11,41 @@ from setuptools.command.build_ext import build_ext
 import pyscipopt
 
 # PySCIPSDP links against SCIP-SDP and the libscip bundled with the PySCIPOpt wheel, so that there is
-# only one SCIP in the process. SCIP's headers come from SCIPOPTDIR.
+# only one SCIP in the process. SCIP's headers come from a SCIP installation (SCIPOPTDIR).
 
-# look for environment variable that specifies path to SCIP (only its headers are used)
-scipoptdir = os.environ.get("SCIPOPTDIR", "").strip('"')
-if not scipoptdir or not os.path.exists(os.path.join(scipoptdir, "include", "scip", "scip.h")):
-    sys.exit("Set SCIPOPTDIR to a SCIP installation (for its headers) of the version used by PySCIPOpt.")
-scip_includedir = os.path.abspath(os.path.join(scipoptdir, "include"))
+def scip_version(installdir):
+    """(major, minor) of the SCIP installed in installdir, or None if there is none."""
+    config = os.path.join(installdir, "include", "scip", "config.h")
+    if not os.path.exists(config):
+        return None
+    version = {}
+    with open(config) as f:
+        for line in f:
+            if line.startswith("#define SCIP_VERSION_"):
+                _, key, value = line.split()[:3]
+                version[key] = int(value)
+    return version.get("SCIP_VERSION_MAJOR"), version.get("SCIP_VERSION_MINOR")
 
-# the headers must be of the same SCIP version as the libscip in the PySCIPOpt wheel
-version = {}
-with open(os.path.join(scip_includedir, "scip", "config.h")) as f:
-    for line in f:
-        if line.startswith("#define SCIP_VERSION_"):
-            _, key, value = line.split()[:3]
-            version[key] = value
+
+# the SCIP installation must have the same version as the libscip in the PySCIPOpt wheel
 model = pyscipopt.Model()
-if (version.get("SCIP_VERSION_MAJOR"), version.get("SCIP_VERSION_MINOR")) != (str(model.getMajorVersion()), str(model.getMinorVersion())):
-    sys.exit("SCIPOPTDIR has SCIP %s.%s, but PySCIPOpt uses SCIP %d.%d."
-             % (version.get("SCIP_VERSION_MAJOR"), version.get("SCIP_VERSION_MINOR"), model.getMajorVersion(), model.getMinorVersion()))
+pyscipopt_scip_version = (model.getMajorVersion(), model.getMinorVersion())
+
+# look for environment variable that specifies path to SCIP, otherwise try known installation places
+scipoptdir = os.environ.get("SCIPOPTDIR", "").strip('"')
+if scipoptdir:
+    if scip_version(scipoptdir) is None:
+        sys.exit("SCIPOPTDIR=%s does not contain a SCIP installation." % scipoptdir)
+    if scip_version(scipoptdir) != pyscipopt_scip_version:
+        sys.exit("SCIPOPTDIR has SCIP %d.%d, but PySCIPOpt uses SCIP %d.%d." % (scip_version(scipoptdir) + pyscipopt_scip_version))
+else:
+    candidates = [os.environ.get("CONDA_PREFIX", ""), "/usr/local", "/opt/homebrew", "/usr"]
+    candidates = [c for c in candidates if c and scip_version(c) == pyscipopt_scip_version]
+    if not candidates:
+        sys.exit("Could not find a SCIP %d.%d installation; set SCIPOPTDIR." % pyscipopt_scip_version)
+    scipoptdir = candidates[0]
+    print("SCIPOPTDIR is undefined; using SCIP installation at %s." % scipoptdir)
+scip_includedir = os.path.abspath(os.path.join(scipoptdir, "include"))
 
 # the libscip bundled with the PySCIPOpt wheel
 pyscipoptdir = os.path.dirname(os.path.abspath(pyscipopt.__file__))
